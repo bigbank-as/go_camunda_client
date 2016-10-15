@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/bigbank/camunda_client"
+	"github.com/bigbank/camunda_client/rest"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ func main() {
 	}
 	httpClient := http.Client{Transport: httpTransport}
 
-	camunda := camunda_client.Construct("https://localhost:6002/engine-rest", "admin", "admin", httpClient)
+	camunda := rest.Construct("https://localhost:6002/engine-rest", "admin", "admin", httpClient)
 	camunda.HandleErrors(func(err error) {
 		fmt.Printf("\nError: %#v", err)
 	})
