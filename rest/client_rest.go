@@ -21,7 +21,7 @@ func Construct(urlRoot string, username string, password string, httpClient http
 	return client
 }
 
-func (client *camundaClientRest) GetProcess(processId string) (dto.Process, error) {
+func (client *camundaClientRest) GetProcess(processId string) (camunda_client.Process, error) {
 	var process dto.Process
 
 	response, err := client.doRequest("GET", client.urlRoot+"/process-instance/"+processId, nil)

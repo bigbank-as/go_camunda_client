@@ -1,6 +1,14 @@
 package dto
 
 type Process struct {
-	Id      string `json:"id"`
-	IsEnded bool   `json:"ended"`
+	JsonId      string `json:"id"`
+	JsonIsEnded bool   `json:"ended"`
+}
+
+func (process Process) GetId() string {
+	return process.JsonId
+}
+
+func (process Process) IsEnded() bool {
+	return process.JsonIsEnded
 }
