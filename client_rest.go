@@ -2,6 +2,8 @@ package camunda_client
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/bigbank/camunda_client/dto"
 	"io"
 	"io/ioutil"
@@ -22,6 +24,7 @@ func (client *camundaClientRest) GetProcess(processId string) (dto.Process, erro
 	response, err := client.doRequest("GET", client.urlRoot+"/process-instance/"+processId, nil)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
+		defer response.Body.Close()
 	}
 
 	return process, err
@@ -56,9 +59,25 @@ func (client *camundaClientRest) doRequest(method, url string, payload io.Reader
 		return response, err
 	}
 
-	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		err := client.parseResponseError(response)
+		client.notifyErrorHandlers(err)
+		return response, err
+	}
 
 	return response, nil
+}
+
+func (client *camundaClientRest) parseResponseError(response *http.Response) error {
+	contentType := response.Header.Get("Content-Type")
+	if contentType == "application/json" {
+		var errorJson dto.Error
+		client.parseResponseJson(response, &errorJson)
+
+		return errors.New(fmt.Sprintf("Server response with error: %s(%s)", errorJson.Type, errorJson.Message))
+	}
+
+	return errors.New(fmt.Sprintf("Server response invalid: %s", response.Status))
 }
 
 func (client *camundaClientRest) parseResponseJson(response *http.Response, dto interface{}) error {
