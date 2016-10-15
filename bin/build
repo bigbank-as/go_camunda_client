@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# Usage example:
+#> bin/build
+
+go build
