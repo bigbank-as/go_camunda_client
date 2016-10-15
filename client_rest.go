@@ -8,10 +8,10 @@ import (
 	"net/http"
 )
 
-func Construct(urlRoot string) CamundaClient {
+func Construct(urlRoot string, httpClient http.Client) CamundaClient {
 	client := new(camundaClientRest)
 	client.urlRoot = urlRoot
-	client.httpClient = http.Client{}
+	client.httpClient = httpClient
 
 	return client
 }
