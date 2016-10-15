@@ -1,27 +1,34 @@
 package camunda_client
 
 import (
+	"encoding/json"
+	"github.com/bigbank/camunda_client/dto"
 	"io/ioutil"
 	"net/http"
 )
 
-type camundaClientRest struct {
-	urlRoot string
-}
-
 func Construct(urlRoot string) CamundaClient {
 	client := new(camundaClientRest)
 	client.urlRoot = urlRoot
+
 	return client
 }
 
-func (client *camundaClientRest) GetProcess(processId string) []byte {
-	jsonData, er := fetchGet(client.urlRoot + "/process-instance/" + processId)
-	if er == nil {
-		return nil
+func (client *camundaClientRest) GetProcess(processId string) dto.Process {
+	var process dto.Process
+
+	jsonData, err := fetchGet(client.urlRoot + "/process-instance/" + processId)
+	if err == nil {
+		return process
 	}
 
-	return jsonData
+	json.Unmarshal(jsonData, &process)
+
+	return process
+}
+
+type camundaClientRest struct {
+	urlRoot string
 }
 
 func fetchGet(url string) ([]byte, error) {
@@ -39,5 +46,6 @@ func readResponse(response *http.Response) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return bytes, nil
 }
