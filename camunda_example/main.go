@@ -14,6 +14,6 @@ func main() {
 	})
 
 	fmt.Print("GetProcess..")
-	process := client.GetProcess("1c2183a5-920c-11e6-876d-0242ac120003")
+	process, _ := client.GetProcess("1c2183a5-920c-11e6-876d-0242ac120003")
 	fmt.Printf("\nProcess: %#v\n", process)
 }

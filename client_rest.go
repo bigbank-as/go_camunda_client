@@ -16,15 +16,15 @@ func Construct(urlRoot string) CamundaClient {
 	return client
 }
 
-func (client *camundaClientRest) GetProcess(processId string) dto.Process {
+func (client *camundaClientRest) GetProcess(processId string) (dto.Process, error) {
 	var process dto.Process
 
-	response, err := client.doRequest("GET", client.urlRoot + "/process-instance/" + processId, nil)
+	response, err := client.doRequest("GET", client.urlRoot+"/process-instance/"+processId, nil)
 	if err == nil {
-		client.parseResponseJson(response, &process)
+		err = client.parseResponseJson(response, &process)
 	}
 
-	return process
+	return process, err
 }
 
 func (client *camundaClientRest) HandleErrors(errorCallback func(error)) {
