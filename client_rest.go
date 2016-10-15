@@ -16,7 +16,7 @@ func Construct(urlRoot string) CamundaClient {
 	return client
 }
 
-func (client camundaClientRest) GetProcess(processId string) dto.Process {
+func (client *camundaClientRest) GetProcess(processId string) dto.Process {
 	var process dto.Process
 
 	response, err := client.doRequest("GET", client.urlRoot + "/process-instance/" + processId, nil)
@@ -27,19 +27,32 @@ func (client camundaClientRest) GetProcess(processId string) dto.Process {
 	return process
 }
 
-type camundaClientRest struct {
-	urlRoot    string
-	httpClient http.Client
+func (client *camundaClientRest) HandleErrors(errorCallback func(error)) {
+	client.errorCallbacks = append(client.errorCallbacks, errorCallback)
 }
 
-func (client camundaClientRest) doRequest(method, url string, payload io.Reader) (*http.Response, error) {
+func (client *camundaClientRest) notifyErrorHandlers(err error) {
+	for _, callback := range client.errorCallbacks {
+		callback(err)
+	}
+}
+
+type camundaClientRest struct {
+	urlRoot        string
+	httpClient     http.Client
+	errorCallbacks []func(error)
+}
+
+func (client *camundaClientRest) doRequest(method, url string, payload io.Reader) (*http.Response, error) {
 	request, err := http.NewRequest(method, url, payload)
 	if err != nil {
+		client.notifyErrorHandlers(err)
 		return nil, err
 	}
 
 	response, err := client.httpClient.Do(request)
 	if err != nil {
+		client.notifyErrorHandlers(err)
 		return response, err
 	}
 
@@ -48,14 +61,16 @@ func (client camundaClientRest) doRequest(method, url string, payload io.Reader)
 	return response, nil
 }
 
-func (client camundaClientRest) parseResponseJson(response *http.Response, dto interface{}) error {
+func (client *camundaClientRest) parseResponseJson(response *http.Response, dto interface{}) error {
 	responseJson, err := ioutil.ReadAll(response.Body)
 	if err != nil {
+		client.notifyErrorHandlers(err)
 		return err
 	}
 
 	err = json.Unmarshal(responseJson, dto)
 	if err != nil {
+		client.notifyErrorHandlers(err)
 		return err
 	}
 
