@@ -15,7 +15,7 @@ func main() {
 	}
 	httpClient := http.Client{Transport: httpTransport}
 
-	camunda := camunda_client.Construct("https://localhost:6002/engine-rest", httpClient)
+	camunda := camunda_client.Construct("https://localhost:6002/engine-rest", "admin", "admin", httpClient)
 	camunda.HandleErrors(func(err error) {
 		fmt.Printf("\nError: %#v", err)
 	})

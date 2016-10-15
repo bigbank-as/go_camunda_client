@@ -10,9 +10,11 @@ import (
 	"net/http"
 )
 
-func Construct(urlRoot string, httpClient http.Client) CamundaClient {
+func Construct(urlRoot string, username string, password string, httpClient http.Client) CamundaClient {
 	client := new(camundaClientRest)
 	client.urlRoot = urlRoot
+	client.authUsername = username
+	client.authPassword = password
 	client.httpClient = httpClient
 
 	return client
@@ -42,12 +44,15 @@ func (client *camundaClientRest) notifyErrorHandlers(err error) {
 
 type camundaClientRest struct {
 	urlRoot        string
+	authUsername   string
+	authPassword   string
 	httpClient     http.Client
 	errorCallbacks []func(error)
 }
 
 func (client *camundaClientRest) doRequest(method, url string, payload io.Reader) (*http.Response, error) {
 	request, err := http.NewRequest(method, url, payload)
+	request.SetBasicAuth(client.authUsername, client.authPassword)
 	if err != nil {
 		client.notifyErrorHandlers(err)
 		return nil, err
