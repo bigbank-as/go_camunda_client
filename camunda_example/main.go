@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/bigbank/camunda_client/rest"
+	"github.com/bigbank/camunda_client/rest/dto"
 	"net/http"
 )
 
@@ -20,7 +21,16 @@ func main() {
 		fmt.Printf("\nError: %#v", err)
 	})
 
+	fmt.Print("StartProcess..")
+	processStarted, _ := camunda.StartProcess("my-demo-process", dto.ProcessStartRequest{
+		VariableList: []dto.Variable{
+			{"id", 123, "Integer"},
+			{"firstName", "John", "String"},
+		},
+	})
+	fmt.Printf("\nProcess: %#v\n", processStarted)
+
 	fmt.Print("GetProcess..")
-	process, _ := camunda.GetProcess("1c2183a5-920c-11e6-876d-0242ac120003")
-	fmt.Printf("\nProcess: %#v\n", process)
+	processLater, _ := camunda.GetProcess(processStarted.GetId())
+	fmt.Printf("\nProcess: %#v\n", processLater)
 }

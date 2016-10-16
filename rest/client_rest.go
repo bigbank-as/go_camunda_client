@@ -1,12 +1,12 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bigbank/camunda_client"
 	"github.com/bigbank/camunda_client/rest/dto"
-	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -21,10 +21,22 @@ func Construct(urlRoot string, username string, password string, httpClient http
 	return client
 }
 
+func (client *camundaClientRest) StartProcess(processDefinitionKey string, request camunda_client.ProcessStartRequest) (camunda_client.Process, error) {
+	var process dto.Process
+
+	response, err := client.doRequest("POST", "process-definition/key/"+processDefinitionKey+"/start", request)
+	if err == nil {
+		err = client.parseResponseJson(response, &process)
+		defer response.Body.Close()
+	}
+
+	return process, err
+}
+
 func (client *camundaClientRest) GetProcess(processId string) (camunda_client.Process, error) {
 	var process dto.Process
 
-	response, err := client.doRequest("GET", client.urlRoot+"/process-instance/"+processId, nil)
+	response, err := client.doRequest("GET", "process-instance/"+processId, nil)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
 		defer response.Body.Close()
@@ -51,8 +63,17 @@ type camundaClientRest struct {
 	errorCallbacks []func(error)
 }
 
-func (client *camundaClientRest) doRequest(method, url string, payload io.Reader) (*http.Response, error) {
-	request, err := http.NewRequest(method, url, payload)
+func (client *camundaClientRest) doRequest(method, path string, payload interface{}) (*http.Response, error) {
+	url := client.urlRoot + "/" + path
+
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		client.notifyErrorHandlers(err)
+		return nil, err
+	}
+
+	request, err := http.NewRequest(method, url, bytes.NewBuffer(payloadJson))
+	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(client.authUsername, client.authPassword)
 	if err != nil {
 		client.notifyErrorHandlers(err)
