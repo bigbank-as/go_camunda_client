@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bigbank/camunda_client"
-	"github.com/bigbank/camunda_client/rest/dto"
+	"github.com/bigbank-as/go_camunda_client"
+	"github.com/bigbank-as/go_camunda_client/rest/dto"
 	"io/ioutil"
 	"net/http"
 )
 
-func Construct(urlRoot string, username string, password string, httpClient http.Client) camunda_client.CamundaClient {
+func Construct(urlRoot string, username string, password string, httpClient http.Client) go_camunda_client.CamundaClient {
 	client := new(camundaClientRest)
 	client.urlRoot = urlRoot
 	client.authUsername = username
@@ -21,7 +21,7 @@ func Construct(urlRoot string, username string, password string, httpClient http
 	return client
 }
 
-func (client *camundaClientRest) StartProcess(processDefinitionKey string, request camunda_client.ProcessStartRequest) (camunda_client.Process, error) {
+func (client *camundaClientRest) StartProcess(processDefinitionKey string, request interface{}) (go_camunda_client.Process, error) {
 	var process dto.Process
 
 	response, err := client.doRequest("POST", "process-definition/key/"+processDefinitionKey+"/start", request)
@@ -33,7 +33,7 @@ func (client *camundaClientRest) StartProcess(processDefinitionKey string, reque
 	return process, err
 }
 
-func (client *camundaClientRest) GetProcess(processId string) (camunda_client.Process, error) {
+func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client.Process, error) {
 	var process dto.Process
 
 	response, err := client.doRequest("GET", "process-instance/"+processId, nil)

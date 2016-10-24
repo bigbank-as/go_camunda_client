@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/bigbank/camunda_client/rest"
-	"github.com/bigbank/camunda_client/rest/dto"
+	"github.com/bigbank-as/go_camunda_client/rest"
+	"github.com/bigbank-as/go_camunda_client/rest/dto"
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ func main() {
 
 	camunda := rest.Construct("https://localhost:6002/engine-rest", "admin", "admin", httpClient)
 	camunda.HandleErrors(func(err error) {
-		fmt.Printf("\nError: %#v", err)
+		fmt.Printf("\nError: %#v", err.Error())
 	})
 
 	fmt.Print("StartProcess..")
