@@ -1,12 +1,10 @@
-package camunda_client
+package go_camunda_client
 
 type CamundaClient interface {
-	StartProcess(processDefinitionKey string, request ProcessStartRequest) (Process, error)
+	StartProcess(processDefinitionKey string, request interface{}) (Process, error)
 	GetProcess(processId string) (Process, error)
 	HandleErrors(errorCallback func(error))
 }
-
-type ProcessStartRequest interface{}
 
 type Process interface {
 	GetId() string

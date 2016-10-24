@@ -7,7 +7,7 @@ Usage
 ------------
 **Init REST client**
 ```go
-camunda := rest.Construct("http://camunda-localhost/engine-rest", "admin", "admin", http.Client{})
+camunda := rest.Construct("http://camunda.localhost/engine-rest", "admin", "admin", http.Client{})
 ```
 
 **Call remote method**
@@ -22,7 +22,7 @@ fmt.Printf("Process: %#v\n", process)
 **Error listening**
 ```go
 camunda.HandleErrors(func(err error) {
-        fmt.Printf("\nError: %#v", err)
+        fmt.Printf("\nError: %#v", err.Error())
 })
 ```
 
@@ -34,19 +34,19 @@ httpTransport := &http.Transport{
         },
 }
 httpClient := http.Client{Transport: httpTransport}
-camunda := rest.Construct("https://localhost:6002/engine-rest", "admin", "admin", httpClient)
+camunda := rest.Construct("https://camunda.localhost/engine-rest", "admin", "admin", httpClient)
 ```
 
 Installation
 ------------
 * **Step 1.** Compile code
 ```bash
-go get github.com/bigbank/camunda_client
+go get github.com/bigbank-as/go_camunda_client
 ```
 
 * **Step 2.** Run example
 
 ```bash
-go get github.com/bigbank/camunda_client/camunda_example
+go install github.com/bigbank-as/go_camunda_client/camunda_example
 bin/camunda_example
 ```
