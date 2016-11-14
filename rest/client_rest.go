@@ -24,7 +24,7 @@ func Construct(urlRoot string, username string, password string, httpClient http
 func (client *camundaClientRest) StartProcess(processDefinitionKey string, request interface{}) (go_camunda_client.Process, error) {
 	var process dto.Process
 
-	response, err := client.doRequest("POST", "process-definition/key/"+processDefinitionKey+"/start", request)
+	response, err := client.doRequest("POST", "process-definition/key/" + processDefinitionKey + "/start", request)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
 		defer response.Body.Close()
@@ -36,13 +36,38 @@ func (client *camundaClientRest) StartProcess(processDefinitionKey string, reque
 func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client.Process, error) {
 	var process dto.Process
 
-	response, err := client.doRequest("GET", "process-instance/"+processId, nil)
+	response, err := client.doRequest("GET", "process-instance/" + processId, nil)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
 		defer response.Body.Close()
 	}
 
 	return process, err
+}
+
+func (client camundaClientRest) GetNextTask(processId string) (go_camunda_client.Task, error) {
+	tasks, err := client.GetAllTasks(processId)
+	if len(tasks) >= 1 {
+		return tasks[0], err
+	}
+	return nil, err
+}
+
+func (client camundaClientRest) GetAllTasks(processId string) ([]go_camunda_client.Task, error) {
+	var dtoTasks []dto.Task
+	var tasks    []go_camunda_client.Task
+
+	response, err := client.doRequest("GET", "task/?processInstanceId=" + processId, nil)
+	if err == nil {
+		err = client.parseResponseJson(response, &dtoTasks)
+		defer response.Body.Close()
+
+		tasks = make([]go_camunda_client.Task, len(dtoTasks))
+		for i := range tasks {
+			tasks[i] = dtoTasks[i]
+		}
+	}
+	return tasks, err
 }
 
 func (client *camundaClientRest) HandleErrors(errorCallback func(error)) {
