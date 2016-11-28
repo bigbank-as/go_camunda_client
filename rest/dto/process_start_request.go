@@ -6,6 +6,10 @@ type ProcessStartRequest struct {
 	VariableList []Variable
 }
 
+type RequestVariables struct {
+	VariableList []Variable
+}
+
 type Variable struct {
 	Name  string
 	Value interface{}

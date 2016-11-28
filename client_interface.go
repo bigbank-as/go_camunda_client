@@ -5,6 +5,7 @@ type CamundaClient interface {
 	GetProcess(processId string) (Process, error)
 	GetNextTask(processId string) (Task, error)
 	GetAllTasks(processId string) ([]Task, error)
+	CompleteTask(taskId string, variables interface{}) (error)
 	HandleErrors(errorCallback func(error))
 }
 
@@ -18,5 +19,4 @@ type Task interface {
 	GetName() string
 	GetTaskDefinitionKey() string
 }
-
 
