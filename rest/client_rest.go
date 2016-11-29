@@ -69,8 +69,8 @@ func (client camundaClientRest) GetAllTasks(processId string) ([]go_camunda_clie
 	}
 	return tasks, err
 }
-func (client camundaClientRest) CompleteTask(taskId string,  variables interface{}) (error) {
-	_, err := client.doRequest("POST", "task/" + taskId + "/complete", variables)
+func (client camundaClientRest) CompleteTask(taskId string,  request interface{}) (error) {
+	_, err := client.doRequest("POST", "task/" + taskId + "/complete", request)
 	return err
 }
 
