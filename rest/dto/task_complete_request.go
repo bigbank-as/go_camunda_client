@@ -1,5 +1,5 @@
 package dto
 
-type ProcessStartRequest struct {
+type TaskCompleteRequest struct {
 	Variables VariableList `json:"variables"`
 }

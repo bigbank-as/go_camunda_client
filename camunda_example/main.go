@@ -23,7 +23,7 @@ func main() {
 
 	fmt.Print("StartProcess..")
 	processStarted, _ := camunda.StartProcess("my-demo-process", dto.ProcessStartRequest{
-		VariableList: []dto.Variable{
+		Variables: []dto.Variable{
 			{"id", 123, "Integer"},
 			{"firstName", "John", "String"},
 		},

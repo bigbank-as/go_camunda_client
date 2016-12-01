@@ -69,6 +69,10 @@ func (client camundaClientRest) GetAllTasks(processId string) ([]go_camunda_clie
 	}
 	return tasks, err
 }
+func (client camundaClientRest) CompleteTask(taskId string,  request interface{}) (error) {
+	_, err := client.doRequest("POST", "task/" + taskId + "/complete", request)
+	return err
+}
 
 func (client *camundaClientRest) HandleErrors(errorCallback func(error)) {
 	client.errorCallbacks = append(client.errorCallbacks, errorCallback)
@@ -111,7 +115,7 @@ func (client *camundaClientRest) doRequest(method, path string, payload interfac
 		return response, err
 	}
 
-	if response.StatusCode != http.StatusOK {
+	if (response.StatusCode < 200 || response.StatusCode >= 300) {
 		err := client.parseResponseError(response)
 		client.notifyErrorHandlers(err)
 		return response, err
