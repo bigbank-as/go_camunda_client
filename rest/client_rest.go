@@ -93,17 +93,8 @@ type camundaClientRest struct {
 }
 
 func (client *camundaClientRest) doRequest(method, path string, payload interface{}) (*http.Response, error) {
-	url := client.urlRoot + "/" + path
 
-	payloadJson, err := json.Marshal(payload)
-	if err != nil {
-		client.notifyErrorHandlers(err)
-		return nil, err
-	}
-
-	request, err := http.NewRequest(method, url, bytes.NewBuffer(payloadJson))
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(client.authUsername, client.authPassword)
+	request, err := client.constructRequest(method, path, payload)
 	if err != nil {
 		client.notifyErrorHandlers(err)
 		return nil, err
@@ -150,4 +141,26 @@ func (client *camundaClientRest) parseResponseJson(response *http.Response, dto 
 	}
 
 	return nil
+}
+
+func (client *camundaClientRest) constructRequest(method, path string, payload interface{})(*http.Request, error) {
+	var request *http.Request;
+	var err error;
+	url := client.urlRoot + "/" + path
+
+	if payload == nil {
+		request, err = http.NewRequest(method, url, nil)
+	} else {
+		var payloadJson []byte;
+		payloadJson, err = json.Marshal(payload)
+		if err != nil {
+			client.notifyErrorHandlers(err)
+			return nil, err
+		}
+		request, err = http.NewRequest(method, url, bytes.NewBuffer(payloadJson))
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(client.authUsername, client.authPassword)
+	return request, err
 }
