@@ -11,7 +11,10 @@ import (
 	"net/http"
 )
 
-func Construct(urlRoot string, username string, password string, httpClient http.Client) go_camunda_client.CamundaClient {
+func Construct(
+	urlRoot string, username string, password string,
+	httpClient http.Client,
+) go_camunda_client.CamundaClient {
 	client := new(camundaClientRest)
 	client.urlRoot = urlRoot
 	client.authUsername = username
@@ -21,7 +24,9 @@ func Construct(urlRoot string, username string, password string, httpClient http
 	return client
 }
 
-func (client *camundaClientRest) StartProcess(processDefinitionKey string, request interface{}) (go_camunda_client.Process, error) {
+func (client *camundaClientRest) StartProcess(processDefinitionKey string, request interface{}) (
+	go_camunda_client.Process, error,
+) {
 	var process dto.Process
 
 	response, err := client.doRequest("POST", "process-definition/key/" + processDefinitionKey + "/start", request)
@@ -43,6 +48,12 @@ func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client
 	}
 
 	return process, err
+}
+
+func (client *camundaClientRest) GetProcessVariable(processId string, variableName string) (
+	go_camunda_client.VariableResponse, error,
+) {
+	return doVariableRequest(client, "process-instance/" + processId + "/variables/" + variableName)
 }
 
 func (client camundaClientRest) GetNextTask(processId string) (go_camunda_client.Task, error) {
@@ -69,9 +80,17 @@ func (client camundaClientRest) GetAllTasks(processId string) ([]go_camunda_clie
 	}
 	return tasks, err
 }
+
 func (client camundaClientRest) CompleteTask(taskId string,  request interface{}) (error) {
 	_, err := client.doRequest("POST", "task/" + taskId + "/complete", request)
 	return err
+}
+
+func (client *camundaClientRest) GetTaskVariable(taskId string, variableName string) (
+	go_camunda_client.VariableResponse,
+	error,
+) {
+	return doVariableRequest(client, "task/" + taskId + "/variables/" + variableName)
 }
 
 func (client *camundaClientRest) HandleErrors(errorCallback func(error)) {
@@ -90,6 +109,28 @@ type camundaClientRest struct {
 	authPassword   string
 	httpClient     http.Client
 	errorCallbacks []func(error)
+}
+
+func (client *camundaClientRest) constructRequest(method, path string, payload interface{})(*http.Request, error) {
+	var request *http.Request;
+	var err error;
+	url := client.urlRoot + "/" + path
+
+	if payload == nil {
+		request, err = http.NewRequest(method, url, nil)
+	} else {
+		var payloadJson []byte;
+		payloadJson, err = json.Marshal(payload)
+		if err != nil {
+			client.notifyErrorHandlers(err)
+			return nil, err
+		}
+		request, err = http.NewRequest(method, url, bytes.NewBuffer(payloadJson))
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(client.authUsername, client.authPassword)
+	return request, err
 }
 
 func (client *camundaClientRest) doRequest(method, path string, payload interface{}) (*http.Response, error) {
@@ -113,6 +154,18 @@ func (client *camundaClientRest) doRequest(method, path string, payload interfac
 	}
 
 	return response, nil
+}
+
+func doVariableRequest(client *camundaClientRest, path string) (dto.VariableResponse, error) {
+	var variableResponse dto.VariableResponse
+
+	response, err := client.doRequest("GET", path + "/?deserializeValue=false", nil)
+	if err == nil {
+		err = client.parseResponseJson(response, &variableResponse)
+		defer response.Body.Close()
+	}
+
+	return variableResponse, err
 }
 
 func (client *camundaClientRest) parseResponseError(response *http.Response) error {
@@ -141,26 +194,4 @@ func (client *camundaClientRest) parseResponseJson(response *http.Response, dto 
 	}
 
 	return nil
-}
-
-func (client *camundaClientRest) constructRequest(method, path string, payload interface{})(*http.Request, error) {
-	var request *http.Request;
-	var err error;
-	url := client.urlRoot + "/" + path
-
-	if payload == nil {
-		request, err = http.NewRequest(method, url, nil)
-	} else {
-		var payloadJson []byte;
-		payloadJson, err = json.Marshal(payload)
-		if err != nil {
-			client.notifyErrorHandlers(err)
-			return nil, err
-		}
-		request, err = http.NewRequest(method, url, bytes.NewBuffer(payloadJson))
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(client.authUsername, client.authPassword)
-	return request, err
 }
