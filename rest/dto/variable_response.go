@@ -7,13 +7,13 @@ import (
 )
 
 type VariableResponse struct {
-	Type      string
-	Value     string
-	ValueFormat string
+	value       string
+	valueType   string
+	valueFormat string
 }
 
 func (response VariableResponse) GetValue() string {
-	return response.Value
+	return response.value
 }
 
 func (response *VariableResponse) UnmarshalJSON(data []byte) error {
@@ -28,9 +28,9 @@ func (response *VariableResponse) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("Failed to parse variable: %s", err)
 	}
 
-	response.Value = strings.Replace(responseRaw.Value, `\\\"`, `"`, -1)
-	response.Type = responseRaw.Type
-	response.ValueFormat = responseRaw.ValueInfo.SerializationDataFormat
+	response.value = strings.Replace(responseRaw.Value, `\\\"`, `"`, -1)
+	response.valueType = responseRaw.Type
+	response.valueFormat = responseRaw.ValueInfo.SerializationDataFormat
 	return nil
 }
 
