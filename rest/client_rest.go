@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,12 +8,12 @@ import (
 	"github.com/bigbank-as/go_camunda_client/rest/dto"
 	"io/ioutil"
 	"net/http"
+	"bytes"
 )
 
-func Construct(
-	urlRoot string, username string, password string,
-	httpClient http.Client,
-) go_camunda_client.CamundaClient {
+const CLIENT_NAME = "goclient-v0.1"
+
+func Construct(urlRoot, username, password string, httpClient http.Client) go_camunda_client.CamundaClient {
 	client := new(camundaClientRest)
 	client.urlRoot = urlRoot
 	client.authUsername = username
@@ -24,12 +23,17 @@ func Construct(
 	return client
 }
 
-func (client *camundaClientRest) StartProcess(processDefinitionKey string, request interface{}) (
-	go_camunda_client.Process, error,
+func (client *camundaClientRest) StartProcess(processDefinitionKey string, requestDto interface{}) (
+	go_camunda_client.Process,
+	error,
 ) {
 	var process dto.Process
 
-	response, err := client.doRequest("POST", "process-definition/key/" + processDefinitionKey + "/start", request)
+	response, err := client.doRequestJson(
+		"POST",
+		"process-definition/key/" + processDefinitionKey + "/start",
+		requestDto,
+	)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
 		defer response.Body.Close()
@@ -41,7 +45,7 @@ func (client *camundaClientRest) StartProcess(processDefinitionKey string, reque
 func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client.Process, error) {
 	var process dto.Process
 
-	response, err := client.doRequest("GET", "process-instance/" + processId, nil)
+	response, err := client.doRequest("GET", "process-instance/" + processId)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
 		defer response.Body.Close()
@@ -50,10 +54,11 @@ func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client
 	return process, err
 }
 
-func (client *camundaClientRest) GetProcessVariable(processId string, variableName string) (
-	go_camunda_client.VariableResponse, error,
+func (client *camundaClientRest) GetProcessVariable(processId, variableName string) (
+	go_camunda_client.VariableResponse,
+	error,
 ) {
-	return doVariableRequest(client, "process-instance/" + processId + "/variables/" + variableName)
+	return client.doRequestVariable("process-instance/" + processId + "/variables/" + variableName)
 }
 
 func (client camundaClientRest) GetNextTask(processId string) (go_camunda_client.Task, error) {
@@ -68,7 +73,7 @@ func (client camundaClientRest) GetAllTasks(processId string) ([]go_camunda_clie
 	var dtoTasks []dto.Task
 	var tasks    []go_camunda_client.Task
 
-	response, err := client.doRequest("GET", "task/?processInstanceId=" + processId, nil)
+	response, err := client.doRequest("GET", "task/?processInstanceId=" + processId)
 	if err == nil {
 		err = client.parseResponseJson(response, &dtoTasks)
 		defer response.Body.Close()
@@ -81,16 +86,16 @@ func (client camundaClientRest) GetAllTasks(processId string) ([]go_camunda_clie
 	return tasks, err
 }
 
-func (client camundaClientRest) CompleteTask(taskId string,  request interface{}) (error) {
-	_, err := client.doRequest("POST", "task/" + taskId + "/complete", request)
+func (client camundaClientRest) CompleteTask(taskId string, requestDto interface{}) (error) {
+	_, err := client.doRequestJson("POST", "task/" + taskId + "/complete", requestDto)
 	return err
 }
 
-func (client *camundaClientRest) GetTaskVariable(taskId string, variableName string) (
+func (client *camundaClientRest) GetTaskVariable(taskId, variableName string) (
 	go_camunda_client.VariableResponse,
 	error,
 ) {
-	return doVariableRequest(client, "task/" + taskId + "/variables/" + variableName)
+	return client.doRequestVariable("task/" + taskId + "/variables/" + variableName)
 }
 
 func (client *camundaClientRest) HandleErrors(errorCallback func(error)) {
@@ -111,35 +116,56 @@ type camundaClientRest struct {
 	errorCallbacks []func(error)
 }
 
-func (client *camundaClientRest) constructRequest(method, path string, payload interface{})(*http.Request, error) {
-	var request *http.Request;
-	var err error;
-	url := client.urlRoot + "/" + path
-
-	if payload == nil {
-		request, err = http.NewRequest(method, url, nil)
-	} else {
-		var payloadJson []byte;
-		payloadJson, err = json.Marshal(payload)
-		if err != nil {
-			client.notifyErrorHandlers(err)
-			return nil, err
-		}
-		request, err = http.NewRequest(method, url, bytes.NewBuffer(payloadJson))
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(client.authUsername, client.authPassword)
-	return request, err
-}
-
-func (client *camundaClientRest) doRequest(method, path string, payload interface{}) (*http.Response, error) {
-
-	request, err := client.constructRequest(method, path, payload)
+func (client *camundaClientRest) doRequest(method, path string) (
+	*http.Response,
+	error,
+) {
+	request, err := http.NewRequest(method, client.urlRoot + "/" + path, nil)
 	if err != nil {
 		client.notifyErrorHandlers(err)
 		return nil, err
 	}
+
+
+	return client.transportRequest(request)
+}
+
+func (client *camundaClientRest) doRequestJson(method, path string, payload interface{}) (
+	*http.Response,
+	error,
+) {
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		client.notifyErrorHandlers(err)
+		return nil, err
+	}
+
+	request, err := http.NewRequest(method, client.urlRoot + "/" + path, bytes.NewBuffer(payloadJson))
+	request.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		client.notifyErrorHandlers(err)
+		return nil, err
+	}
+
+	return client.transportRequest(request)
+}
+
+func (client *camundaClientRest) doRequestVariable(resoucePath string) (dto.VariableResponse, error) {
+	var variableResponse dto.VariableResponse
+
+	response, err := client.doRequest("GET", resoucePath+ "/?deserializeValue=false")
+	if err == nil {
+		err = client.parseResponseJson(response, &variableResponse)
+		defer response.Body.Close()
+	}
+
+	return variableResponse, err
+}
+
+func (client *camundaClientRest) transportRequest(request *http.Request) (*http.Response, error) {
+	request.Header.Set("User-Agent", CLIENT_NAME)
+	request.Header.Set("Accept", "application/json")
+	request.SetBasicAuth(client.authUsername, client.authPassword)
 
 	response, err := client.httpClient.Do(request)
 	if err != nil {
@@ -147,25 +173,13 @@ func (client *camundaClientRest) doRequest(method, path string, payload interfac
 		return response, err
 	}
 
-	if (response.StatusCode < 200 || response.StatusCode >= 300) {
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		err := client.parseResponseError(response)
 		client.notifyErrorHandlers(err)
 		return response, err
 	}
 
 	return response, nil
-}
-
-func doVariableRequest(client *camundaClientRest, path string) (dto.VariableResponse, error) {
-	var variableResponse dto.VariableResponse
-
-	response, err := client.doRequest("GET", path + "/?deserializeValue=false", nil)
-	if err == nil {
-		err = client.parseResponseJson(response, &variableResponse)
-		defer response.Body.Close()
-	}
-
-	return variableResponse, err
 }
 
 func (client *camundaClientRest) parseResponseError(response *http.Response) error {
