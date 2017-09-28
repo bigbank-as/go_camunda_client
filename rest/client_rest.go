@@ -54,6 +54,18 @@ func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client
 	return process, err
 }
 
+func (client *camundaClientRest) FindProcess(query string) (go_camunda_client.Process, error) {
+	var process dto.Process
+
+	response, err := client.doRequest("GET", "process-instance?" + query)
+	if err == nil {
+		err = client.parseResponseJson(response, &process)
+		defer response.Body.Close()
+	}
+
+	return process, err
+}
+
 func (client *camundaClientRest) GetProcessVariable(processId, variableName string) (
 	go_camunda_client.VariableResponse,
 	error,
