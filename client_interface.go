@@ -1,9 +1,11 @@
 package go_camunda_client
 
+import "github.com/bigbank-as/go_camunda_client/rest/dto"
+
 type CamundaClient interface {
 	StartProcess(processDefinitionKey string, request interface{}) (Process, error)
 	GetProcess(processId string) (Process, error)
-	FindProcess(query string) (Process, error)
+	FindProcess(query string) (ProcessInstance, error)
 	GetProcessVariable(processId string, variableName string) (VariableResponse, error)
 	GetNextTask(processId string) (Task, error)
 	GetAllTasks(processId string) ([]Task, error)
@@ -15,6 +17,10 @@ type CamundaClient interface {
 type Process interface {
 	GetId() string
 	IsEnded() bool
+}
+
+type ProcessInstance interface {
+	GetId() string
 }
 
 type Task interface {
