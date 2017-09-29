@@ -54,8 +54,8 @@ func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client
 	return process, err
 }
 
-func (client *camundaClientRest) FindProcess(query string) ([]dto.ProcessInstance, error) {
-	var process []dto.ProcessInstance
+func (client *camundaClientRest) FindProcess(query string) ([]go_camunda_client.ProcessInstance, error) {
+	var process []go_camunda_client.ProcessInstance
 	response, err := client.doRequest("GET", "process-instance?" + query)
 	if err == nil {
 		err = client.parseResponseJson(response, &process)
