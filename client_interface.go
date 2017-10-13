@@ -19,6 +19,7 @@ type Process interface {
 
 type ProcessInstance interface {
 	GetId() string
+	GetBusinessKey() string
 }
 
 type Task interface {

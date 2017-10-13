@@ -14,3 +14,7 @@ type ProcessInstance struct {
 func (processInstance ProcessInstance) GetId() string {
 	return processInstance.Id
 }
+
+func (processInstance ProcessInstance) GetBusinessKey() string {
+	return processInstance.BusinessKey
+}

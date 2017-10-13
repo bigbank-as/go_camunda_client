@@ -55,13 +55,20 @@ func (client *camundaClientRest) GetProcess(processId string) (go_camunda_client
 }
 
 func (client *camundaClientRest) FindProcess(query string) ([]go_camunda_client.ProcessInstance, error) {
-	var process []go_camunda_client.ProcessInstance
+	var dtoProcesses []dto.ProcessInstance
+	var processes []go_camunda_client.ProcessInstance
+
 	response, err := client.doRequest("GET", "process-instance?" + query)
 	if err == nil {
-		err = client.parseResponseJson(response, &process)
+		err = client.parseResponseJson(response, &dtoProcesses)
 		defer response.Body.Close()
+
+		processes = make([]go_camunda_client.ProcessInstance, len(dtoProcesses))
+		for i := range processes {
+			processes[i] = dtoProcesses[i]
+		}
 	}
-	return process, err
+	return processes, err
 }
 
 func (client *camundaClientRest) GetProcessVariable(processId, variableName string) (
